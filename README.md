@@ -1,2 +1,0 @@
-# infrastructure
-Infrastructure as code
