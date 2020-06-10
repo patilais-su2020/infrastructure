@@ -42,4 +42,4 @@ aws configure --profile prod
 - To apply and create VPC
 	- ``` terraform apply ```
 - To destroy the VPC
-	- ``` terraform destroy ```
+	- ``` terraform destroy ``` 
