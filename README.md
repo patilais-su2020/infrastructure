@@ -18,6 +18,7 @@ vim .profile
 Edit the .profile file and add the following to the end of the file: 
 
 ``` export PATH="$PATH:~/software" ``` 
+<br />
 Lastly check if terraform is installed successfully:
 ``` 
 terraform version 
