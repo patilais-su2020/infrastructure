@@ -1,3 +1,8 @@
+variable "region" {
+  description = "Region to deploy VPC"
+  default     = "us-east-1"
+}
+
 variable "vpc_id" {
   description = "Existing VPC to use (specify this, if you don't want to create new VPC)"
   default     = ""
