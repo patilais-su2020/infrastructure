@@ -42,3 +42,53 @@ variable "subnet_cidr_third" {
     description = "The CIDR block for the 3rd subnet"
     default = "10.10.103.0/24"
 }
+
+variable "cidr_block_sec_grp_ssh" {
+    description = "The CIDR block for the 3rd subnet"
+    default = "0.0.0.0/0"
+}
+
+variable "cidr_block_sec_grp_https" {
+    description = "The CIDR block for the 3rd subnet"
+    default = "0.0.0.0/0"
+}
+
+variable "cidr_block_sec_grp_http" {
+    description = "The CIDR block for the 3rd subnet"
+    default = "0.0.0.0/0"
+}
+
+variable "cidr_block_sec_grp_frontend" {
+    description = "The CIDR block for the 3rd subnet"
+    default = "0.0.0.0/0"
+}
+
+variable "cidr_block_sec_grp_backend" {
+    description = "The CIDR block for the 3rd subnet"
+    default = "0.0.0.0/0"
+}
+
+variable "cidr_block_sec_grp_webapp" {
+    description = "The CIDR block for the 3rd subnet"
+    default = "0.0.0.0/0"
+}
+
+variable "cidr_block_sec_grp_outbound" {
+    description = "The CIDR block for the 3rd subnet"
+    default = "0.0.0.0/0"
+}
+
+variable "db_master_password" {
+    description = "Password for master db in RDS"
+    type = "string"
+}
+
+variable "db_master_username" {
+    description = "Username for master db in RDS"
+    default = "csye6225-su2020"
+}
+
+variable "db_identifier" {
+    description = "Username for master db in RDS"
+    default = "csye6225-su2020"
+}
