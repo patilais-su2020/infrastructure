@@ -9,4 +9,11 @@ module "vpc2" {
   subnet_cidr_primary = "${var.subnet_cidr_primary}"
   subnet_cidr_secondary = "${var.subnet_cidr_secondary}"
   subnet_cidr_third = "${var.subnet_cidr_third}"
+  cidr_block_sec_grp_ssh = "${var.cidr_block_sec_grp_ssh}"
+  cidr_block_sec_grp_https = "${var.cidr_block_sec_grp_https}"
+  cidr_block_sec_grp_http = "${var.cidr_block_sec_grp_http}"
+  cidr_block_sec_grp_frontend = "${var.cidr_block_sec_grp_frontend}"
+  cidr_block_sec_grp_backend = "${var.cidr_block_sec_grp_backend}"
+  cidr_block_sec_grp_webapp = "${var.cidr_block_sec_grp_webapp}"
+  cidr_block_sec_grp_outbound = "${var.cidr_block_sec_grp_outbound}"
 }

@@ -42,3 +42,38 @@ variable "subnet_cidr_third" {
     description = "The CIDR block for the 3rd subnet"
     default = "10.10.103.0/24"
 }
+
+variable "cidr_block_sec_grp_ssh" {
+    description = "The CIDR block for the 3rd subnet"
+    default = "0.0.0.0/0"
+}
+
+variable "cidr_block_sec_grp_https" {
+    description = "The CIDR block for the 3rd subnet"
+    default = "0.0.0.0/0"
+}
+
+variable "cidr_block_sec_grp_http" {
+    description = "The CIDR block for the 3rd subnet"
+    default = "0.0.0.0/0"
+}
+
+variable "cidr_block_sec_grp_frontend" {
+    description = "The CIDR block for the 3rd subnet"
+    default = "0.0.0.0/0"
+}
+
+variable "cidr_block_sec_grp_backend" {
+    description = "The CIDR block for the 3rd subnet"
+    default = "0.0.0.0/0"
+}
+
+variable "cidr_block_sec_grp_webapp" {
+    description = "The CIDR block for the 3rd subnet"
+    default = "0.0.0.0/0"
+}
+
+variable "cidr_block_sec_grp_outbound" {
+    description = "The CIDR block for the 3rd subnet"
+    default = "0.0.0.0/0"
+}
