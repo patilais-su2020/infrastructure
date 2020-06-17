@@ -1,6 +1,7 @@
 module "vpc1" {
-  source = "../modules/networking"
+  source = "../vpc/"
   vpc_id = "${var.vpc_id}"
+  region = "${var.region}"
   cidr = "${var.cidr}"
   subnet_id_primary = "${var.subnet_id_primary}"
   subnet_id_secondary = "${var.subnet_id_secondary}"
