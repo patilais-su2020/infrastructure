@@ -2,9 +2,7 @@ provider "aws" {
     region = "${var.region}"
 }
 
-
 resource "aws_vpc" "selected" {
-
     cidr_block = "${var.cidr}"
     enable_dns_hostnames = true
     enable_dns_support = true
@@ -44,13 +42,23 @@ resource "aws_subnet" "secondary-subnet" {
 }
 
 resource "aws_subnet" "third-subnet" {
-    availability_zone = "${data.aws_availability_zones.available.names[1]}"
-    vpc_id            = "${aws_vpc.selected.id}"
-    cidr_block = "${var.subnet_cidr_third}"
+    availability_zone       = "${data.aws_availability_zones.available.names[2]}"
+    vpc_id                  = "${aws_vpc.selected.id}"
+    cidr_block              = "${var.subnet_cidr_third}"
     map_public_ip_on_launch = true
 
     tags = {
         Name = "csye-subnet-third"
+    }
+}
+
+resource "aws_subnet" "fourth-subnet" {
+    availability_zone       = "${data.aws_availability_zones.available.names[1]}"
+    vpc_id                  = "${aws_vpc.selected.id}"
+    cidr_block              = "${var.subnet_cidr_fourth}"
+
+    tags = {
+        Name = "csye-subnet-fourth"
     }
 }
 
@@ -96,6 +104,11 @@ resource "aws_route_table_association" "third-routetable-association" {
     route_table_id = "${aws_route_table.dev_routetable.id}"
 }
 
+#Attaching fourth subnet to route table
+resource "aws_route_table_association" "fourth-routetable-association" {
+    subnet_id = "${aws_subnet.fourth-subnet.id}"
+    route_table_id = "${aws_route_table.dev_routetable.id}"
+}
 
 #Attaching Security Group to EC2 instance
 resource "aws_security_group" "application_sec_grp" {
@@ -129,24 +142,24 @@ resource "aws_security_group" "application_sec_grp" {
 
   ingress {
     description = "Frontend Port for webapp"
-    from_port   = 3000
-    to_port     = 3000
+    from_port   = "${var.frontend_port}"
+    to_port     = "${var.frontend_port}"
     protocol    = "tcp"
     cidr_blocks = ["${var.cidr_block_sec_grp_frontend}"]
   }
 
   ingress {
     description = "Backend Port for webapp"
-    from_port   = 4000
-    to_port     = 4000
+    from_port   = "${var.backend_port}"
+    to_port     = "${var.backend_port}"
     protocol    = "tcp"
     cidr_blocks = ["${var.cidr_block_sec_grp_backend}"]
   }
 
   ingress {
     description = "Proxy Port for webapp"
-    from_port   = 5000
-    to_port     = 5000
+    from_port   = "${var.proxy_port}"
+    to_port     = "${var.proxy_port}"
     protocol    = "tcp"
     cidr_blocks = ["${var.cidr_block_sec_grp_webapp}"]
   }
@@ -167,11 +180,12 @@ resource "aws_security_group" "application_sec_grp" {
 resource "aws_security_group" "database_sec_grp" {
   name        = "database_sec_grp"
   description = "Setting inbound and outbound traffic"
-  vpc_id = "${aws_vpc.selected.id}"
+  vpc_id      = "${aws_vpc.selected.id}"
+
   ingress {
     description = "Database port for webapp"
-    from_port   = 3306
-    to_port     = 3306
+    from_port   = "${var.db_port}"
+    to_port     = "${var.db_port}"
     protocol    = "tcp"
     security_groups = ["${aws_security_group.application_sec_grp.id}"]
   }
@@ -183,7 +197,7 @@ resource "aws_security_group" "database_sec_grp" {
 
 #Creating S3
 resource "aws_s3_bucket" "webapp_s3_bucket" {
-  bucket = "webapp.aishwarya.patil"
+  bucket = "${var.s3_bucket_name}"
   acl    = "private"
   force_destroy = true
 
@@ -212,10 +226,10 @@ resource "aws_s3_bucket" "webapp_s3_bucket" {
   }
 }
 
-#Creating Subnet for RDS instance
-resource "aws_db_subnet_group" "default" {
-  name       = "main"
-  subnet_ids = ["${aws_subnet.frontend.id}", "${aws_subnet.backend.id}"]
+#Creating a subnet group for RDS instance
+resource "aws_db_subnet_group" "rds_db_subnet_grp" {
+  name       = "rds_db_subnet_grp"
+  subnet_ids = ["${aws_subnet.fourth-subnet.id}","${aws_subnet.third-subnet.id}"]
 
   tags = {
     Name = "My DB subnet group"
@@ -223,17 +237,128 @@ resource "aws_db_subnet_group" "default" {
 }
 
 #Creating an AWS instance
-resource "aws_db_instance" "default" {
-  allocated_storage    = 20
-  storage_type         = "gp2"
-  engine               = "mysql"
-  engine_version       = "5.7"
-  instance_class       = "db.t3.micro"
-  multi_az             = "false"
-  identifier           = "${var.db_identifier}"
-  name                 = "webappdb"
-  username             = "${var.db_master_username}"
-  password             = "${var.db_master_password}"
-  parameter_group_name = "default.mysql5.7"
+resource "aws_db_instance" "rds_instance" {
+  allocated_storage    = var.storage_rds
+  engine               = var.rds_engine
+  engine_version       = var.rds_engine_version
+  instance_class       = var.rds_instance_class
+  multi_az             = false
+  identifier           = var.db_identifier
+  name                 = var.rds_instance_name
+  username             = var.db_master_username
+  password             = var.db_master_password
+  publicly_accessible  = var.publicly_accessible
+  db_subnet_group_name = aws_db_subnet_group.rds_db_subnet_grp.name
+  vpc_security_group_ids = [aws_security_group.database_sec_grp.id]
+  skip_final_snapshot = true
 }
 
+data "aws_ami" "ubuntu" {
+  most_recent = true
+
+  filter {
+    name   = "tag:Name"
+    values = [var.ami_image_name]
+  }
+
+  owners = ["112710657666"]
+}
+
+#Creating EC2 instance
+resource "aws_instance" "csye_6225_ec2" {
+  ami                     = "${data.aws_ami.ubuntu.id}"
+  instance_type           = "t2.micro"
+  vpc_security_group_ids  = ["${aws_security_group.application_sec_grp.id}"] 
+  subnet_id               = "${aws_subnet.primary-subnet.id}"
+  disable_api_termination = false
+  key_name                = "${var.ssh_key_name}"
+  iam_instance_profile    = "${aws_iam_instance_profile.ec2_profile.name}"
+  user_data               = << EOF 
+  #! /bin/bash
+  echo "database_username=${var.db_master_username}" >> ~/.bashrc
+  echo "database_password=${var.db_master_password}" >> ~/.bashrc
+  echo "s3_bucket_name=${var.s3_bucket_name}" >> ~/.bashrc
+  EOF
+
+  
+  root_block_device {
+    volume_type           =  var.root_block_device_volume_type
+    volume_size           =  var.root_block_device_volume_size
+    delete_on_termination = true
+  }
+
+  depends_on = [
+    aws_db_instance.rds_instance
+  ] 
+  
+  tags = {
+    Name = "csye6225_ec2"
+  }
+}
+
+#Creating DynamoDb 
+resource "aws_dynamodb_table" "csye-dynamodb-table" {
+  name           = "csye6225"
+  read_capacity  = 20
+  write_capacity = 20
+  hash_key       = "id"
+
+  attribute {
+    name = "id"
+    type = "S"
+  }
+
+  tags = {
+    Name        = "dynamodb-table-1"
+    Environment = "production"
+  }
+}
+
+
+
+#Creating IAM policy
+resource "aws_iam_policy" "WebAppS3" {
+  name        = "WebAppS3"
+  description = "S3 bucket policy"
+
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+      {
+          "Action": [
+              "s3:PutObject",
+              "s3:GetObject",
+              "s3:DeleteObject"
+          ],
+          "Effect": "Allow",
+          "Resource": [
+              "arn:aws:s3:::${var.s3_bucket_name}",
+              "arn:aws:s3:::${var.s3_bucket_name}/*"
+          ]
+      }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_role" "ec2_s3_role" {
+  name = "EC2-CSYE6225"
+
+  assume_role_policy = "${file("ec2s3role.json")}"
+
+  tags = {
+    Name = "EC2-Iam role"
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "ec2_s3_attach" {
+  role       = "${aws_iam_role.ec2_s3_role.name}"
+  policy_arn = "${aws_iam_policy.WebAppS3.arn}"
+}
+
+#Profile for attachment to EC2 instance
+resource "aws_iam_instance_profile" "ec2_profile" {
+  name = "ec2_profile"
+  role = "${aws_iam_role.ec2_s3_role.name}"
+}
