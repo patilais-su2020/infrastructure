@@ -18,3 +18,7 @@ output "this_subnet_third_id" {
   value       = "${aws_subnet.third-subnet.id}"
 }
 
+output "user_data" {
+  description = "User data passed to EC2 instance"
+  value = "${aws_instance.csye_6225_ec2.user_data}"
+}

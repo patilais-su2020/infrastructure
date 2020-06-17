@@ -273,14 +273,13 @@ resource "aws_instance" "csye_6225_ec2" {
   disable_api_termination = false
   key_name                = "${var.ssh_key_name}"
   iam_instance_profile    = "${aws_iam_instance_profile.ec2_profile.name}"
-  user_data               = << EOF 
-  #! /bin/bash
-  echo "database_username=${var.db_master_username}" >> ~/.bashrc
-  echo "database_password=${var.db_master_password}" >> ~/.bashrc
-  echo "s3_bucket_name=${var.s3_bucket_name}" >> ~/.bashrc
-  EOF
-
-  
+  user_data = <<-EOF
+          #!/bin/bash
+          echo "db_hostname=${aws_db_instance.rds_instance.address}">>~/.bashrc
+          echo "db_username=${var.db_master_username}">>~/.bashrc
+          echo "db_password=${var.db_master_password}">>~/.bashrc
+          echo "s3_bucket_name=${var.s3_bucket_name}">>~/.bashrc
+      EOF  
   root_block_device {
     volume_type           =  var.root_block_device_volume_type
     volume_size           =  var.root_block_device_volume_size
