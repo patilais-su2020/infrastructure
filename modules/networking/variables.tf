@@ -169,12 +169,12 @@ variable "ami_image_name" {
     default = "csye6225_ubuntu_image"
 }
 
-variable root_block_device_volume_type {
+variable "root_block_device_volume_type" {
     description = "Root Block device Volume type"
     default = "gp2"
 }
 
-variable root_block_device_volume_size {
+variable "root_block_device_volume_size" {
     description = "Root Block device Volume size"
     default = 20
 }

@@ -275,10 +275,10 @@ resource "aws_instance" "csye_6225_ec2" {
   iam_instance_profile    = "${aws_iam_instance_profile.ec2_profile.name}"
   user_data = <<-EOF
           #!/bin/bash
-          echo "db_hostname=${aws_db_instance.rds_instance.address}">>~/.bashrc
-          echo "db_username=${var.db_master_username}">>~/.bashrc
-          echo "db_password=${var.db_master_password}">>~/.bashrc
-          echo "s3_bucket_name=${var.s3_bucket_name}">>~/.bashrc
+          echo "db_hostname=${aws_db_instance.rds_instance.address}">>/home/ubuntu/.bashrc
+          echo "db_username=${var.db_master_username}">>/home/ubuntu/.bashrc
+          echo "db_password=${var.db_master_password}">>/home/ubuntu/.bashrc
+          echo "s3_bucket_name=${var.s3_bucket_name}">>/home/ubuntu/.bashrc
       EOF  
   root_block_device {
     volume_type           =  var.root_block_device_volume_type
