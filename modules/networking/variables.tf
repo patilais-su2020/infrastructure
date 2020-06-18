@@ -178,3 +178,16 @@ variable "root_block_device_volume_size" {
     description = "Root Block device Volume size"
     default = 20
 }
+
+variable "prod_access_key"{
+    description = "Prod access key id"
+}
+
+variable "prod_secret_key"{
+    description = "Prod secret access key"
+}
+
+variable "ami_owner" {
+    description = "User that created the ami"
+    default = 112710657666
+}

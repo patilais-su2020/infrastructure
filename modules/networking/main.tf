@@ -261,7 +261,7 @@ data "aws_ami" "ubuntu" {
     values = [var.ami_image_name]
   }
 
-  owners = ["112710657666"]
+  owners = ["${var.ami_owner}"]
 }
 
 #Creating EC2 instance
@@ -279,6 +279,8 @@ resource "aws_instance" "csye_6225_ec2" {
           echo "db_username=${var.db_master_username}">>/home/ubuntu/.bashrc
           echo "db_password=${var.db_master_password}">>/home/ubuntu/.bashrc
           echo "s3_bucket_name=${var.s3_bucket_name}">>/home/ubuntu/.bashrc
+          echo "prod_access_key=${var.prod_access_key}">>/home/ubuntu/.bashrc
+          echo "prod_secret_key=${var.prod_secret_key}">>/home/ubuntu/.bashrc
       EOF  
   root_block_device {
     volume_type           =  var.root_block_device_volume_type
