@@ -281,6 +281,8 @@ resource "aws_instance" "csye_6225_ec2" {
           echo "s3_bucket_name=${var.s3_bucket_name}">>/home/ubuntu/.bashrc
           echo "prod_access_key=${var.prod_access_key}">>/home/ubuntu/.bashrc
           echo "prod_secret_key=${var.prod_secret_key}">>/home/ubuntu/.bashrc
+          echo "prod_region=${var.region}">>/home/ubuntu/.bashrc
+          echo "db_name=${rds_instance_name}">>/home/ubuntu/.bashrc
       EOF  
   root_block_device {
     volume_type           =  var.root_block_device_volume_type
