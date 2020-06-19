@@ -271,7 +271,7 @@ resource "aws_instance" "csye_6225_ec2" {
   vpc_security_group_ids  = ["${aws_security_group.application_sec_grp.id}"] 
   subnet_id               = "${aws_subnet.primary-subnet.id}"
   disable_api_termination = false
-  key_name                = "${var.ssh_key_name}"
+  key_name                = var.ssh_key_name
   iam_instance_profile    = "${aws_iam_instance_profile.ec2_profile.name}"
   user_data = <<-EOF
           #!/bin/bash
