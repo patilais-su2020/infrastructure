@@ -279,10 +279,10 @@ resource "aws_instance" "csye_6225_ec2" {
           echo "export db_username=${var.db_master_username}">>/home/ubuntu/.bashrc
           echo "export db_password=${var.db_master_password}">>/home/ubuntu/.bashrc
           echo "export s3_bucket_name=${var.s3_bucket_name}">>/home/ubuntu/.bashrc
-          echo "export prod_access_key=${var.prod_access_key}">>/home/ubuntu/.bashrc
-          echo "export prod_secret_key=${var.prod_secret_key}">>/home/ubuntu/.bashrc
-          echo "export prod_region=${var.region}">>/home/ubuntu/.bashrc
+          echo "export AWS_ACCESS_KEY_ID=${var.prod_access_key}">>/home/ubuntu/.bashrc
+          echo "export AWS_SECRET_ACCESS_KEY=${var.prod_secret_key}">>/home/ubuntu/.bashrc
           echo "export db_name=${var.rds_instance_name}">>/home/ubuntu/.bashrc
+          echo "export AWS_REGION=${var.region}">>/home/ubuntu/.bashrc
       EOF  
   root_block_device {
     volume_type           =  var.root_block_device_volume_type
