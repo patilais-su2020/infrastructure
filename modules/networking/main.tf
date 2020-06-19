@@ -271,18 +271,18 @@ resource "aws_instance" "csye_6225_ec2" {
   vpc_security_group_ids  = ["${aws_security_group.application_sec_grp.id}"] 
   subnet_id               = "${aws_subnet.primary-subnet.id}"
   disable_api_termination = false
-  key_name                = "${var.ssh_key_name}"
+  key_name                = var.ssh_key_name
   iam_instance_profile    = "${aws_iam_instance_profile.ec2_profile.name}"
   user_data = <<-EOF
           #!/bin/bash
-          echo "db_hostname=${aws_db_instance.rds_instance.address}">>/home/ubuntu/.bashrc
-          echo "db_username=${var.db_master_username}">>/home/ubuntu/.bashrc
-          echo "db_password=${var.db_master_password}">>/home/ubuntu/.bashrc
-          echo "s3_bucket_name=${var.s3_bucket_name}">>/home/ubuntu/.bashrc
-          echo "prod_access_key=${var.prod_access_key}">>/home/ubuntu/.bashrc
-          echo "prod_secret_key=${var.prod_secret_key}">>/home/ubuntu/.bashrc
-          echo "prod_region=${var.region}">>/home/ubuntu/.bashrc
-          echo "db_name=${var.rds_instance_name}">>/home/ubuntu/.bashrc
+          echo "export db_hostname=${aws_db_instance.rds_instance.address}">>/home/ubuntu/.bashrc
+          echo "export db_username=${var.db_master_username}">>/home/ubuntu/.bashrc
+          echo "export db_password=${var.db_master_password}">>/home/ubuntu/.bashrc
+          echo "export s3_bucket_name=${var.s3_bucket_name}">>/home/ubuntu/.bashrc
+          echo "export AWS_ACCESS_KEY_ID=${var.prod_access_key}">>/home/ubuntu/.bashrc
+          echo "export AWS_SECRET_ACCESS_KEY=${var.prod_secret_key}">>/home/ubuntu/.bashrc
+          echo "export db_name=${var.rds_instance_name}">>/home/ubuntu/.bashrc
+          echo "export AWS_REGION=${var.region}">>/home/ubuntu/.bashrc
       EOF  
   root_block_device {
     volume_type           =  var.root_block_device_volume_type
