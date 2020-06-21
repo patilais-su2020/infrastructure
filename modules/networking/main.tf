@@ -332,7 +332,6 @@ resource "aws_iam_policy" "WebAppS3" {
           ],
           "Effect": "Allow",
           "Resource": [
-              "arn:aws:s3:::${var.s3_bucket_name}",
               "arn:aws:s3:::${var.s3_bucket_name}/*"
           ]
       }
