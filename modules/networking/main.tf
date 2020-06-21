@@ -255,11 +255,7 @@ resource "aws_db_instance" "rds_instance" {
 
 data "aws_ami" "ubuntu" {
   most_recent = true
-
-  filter {
-    name   = "tag:Name"
-    values = [var.ami_image_name]
-  }
+  name_regex = "^csye6225_a4_.*"
 
   owners = ["${var.ami_owner}"]
 }
