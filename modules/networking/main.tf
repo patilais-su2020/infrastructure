@@ -315,7 +315,7 @@ resource "aws_dynamodb_table" "csye-dynamodb-table" {
 
 
 
-#Creating IAM policy
+#Creating IAM policy for S3 bucket 
 resource "aws_iam_policy" "WebAppS3" {
   name        = "WebAppS3"
   description = "S3 bucket policy"
@@ -340,23 +340,287 @@ resource "aws_iam_policy" "WebAppS3" {
 EOF
 }
 
-resource "aws_iam_role" "ec2_s3_role" {
-  name = "EC2-CSYE6225"
+
+#--------------------------------------------------------------------------
+#------------------------------ Code Deploy -------------------------------
+
+#Creating S3 bucket for Code Deploy
+# resource "aws_s3_bucket" "codedeploy_s3_bucket" {
+#   bucket = "${var.code_deploy_s3_bucket_name}"
+#   acl    = "private"
+#   force_destroy = true
+
+#   versioning {
+#     mfa_delete = true
+#   }
+
+#   #Default server side encryption
+#   server_side_encryption_configuration {
+#     rule {
+#       apply_server_side_encryption_by_default {
+#         sse_algorithm     = "AES256"
+#       }
+#     }
+#   }
+
+#   lifecycle_rule {
+#     enabled = true
+#     expiration {
+#       days = 30
+#       expired_object_delete_marker = true
+#     }
+#   }
+
+#   tags = {
+#     Name        = "Code Deploy bucket"
+#     Environment = "Prod"
+#   }
+# }
+
+#Creating IAM policy for S3 bucket 
+resource "aws_iam_policy" "CodeDeploy-EC2-S3" {
+  name        = "CodeDeploy-EC2-S3"
+  description = "CodeDeploy S3 bucket policy"
+
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+      {
+          "Action": [
+              "s3:List*",
+              "s3:Get*"
+          ],
+          "Effect": "Allow",
+          "Resource": [
+              "arn:aws:s3:::${var.code_deploy_s3_bucket_name}/*"
+          ]
+      }
+  ]
+}
+EOF
+}
+
+
+#Creating role for CodeDeploy-EC2-To-S3
+resource "aws_iam_role" "CodeDeployEC2ServiceRole" {
+  name = "CodeDeployEC2ServiceRole"
 
   assume_role_policy = "${file("ec2s3role.json")}"
 
   tags = {
-    Name = "EC2-Iam role"
+    Name = "EC2-Code-Deploy-Iam role"
   }
 }
 
-resource "aws_iam_role_policy_attachment" "ec2_s3_attach" {
-  role       = "${aws_iam_role.ec2_s3_role.name}"
+resource "aws_iam_role_policy_attachment" "code_deploy_ec2_attach" {
+  role       = "${aws_iam_role.CodeDeployEC2ServiceRole.name}"
+  policy_arn = "${aws_iam_policy.CodeDeploy-EC2-S3.arn}"
+}
+
+resource "aws_iam_role_policy_attachment" "ec2_s3_webapp_attach" {
+  role       = "${aws_iam_role.CodeDeployEC2ServiceRole.name}"
   policy_arn = "${aws_iam_policy.WebAppS3.arn}"
 }
 
 #Profile for attachment to EC2 instance
 resource "aws_iam_instance_profile" "ec2_profile" {
   name = "ec2_profile"
-  role = "${aws_iam_role.ec2_s3_role.name}"
+  role = "${aws_iam_role.CodeDeployEC2ServiceRole.name}"
 }
+
+
+#----------------------------------- Creating policies for Circleci user ------------------------------------
+
+
+resource "aws_iam_policy" "CircleCI-Upload-To-S3" {
+  name        = "CircleCI-Upload-To-S3"
+  description = "CircleCI upload to S3 bucket policy"
+
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+      {
+          "Action": [
+              "s3:List*",
+              "s3:Get*",
+              "s3:Put*"
+          ],
+          "Effect": "Allow",
+          "Resource": [
+              "arn:aws:s3:::${var.code_deploy_s3_bucket_name}/*"
+          ]
+      }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_policy" "CircleCI-Code-Deploy" {
+  name        = "CircleCI-Code-Deploy"
+  description = "CircleCI code deploy to S3 bucket policy"
+
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "codedeploy:RegisterApplicationRevision",
+        "codedeploy:GetApplicationRevision"
+      ],
+      "Resource": [
+        "arn:aws:codedeploy:${var.region}:${var.aws_account_id}:application:${var.code_deploy_application_name}"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "codedeploy:CreateDeployment",
+        "codedeploy:GetDeployment"
+      ],
+      "Resource": [
+        "*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "codedeploy:GetDeploymentConfig"
+      ],
+      "Resource": [
+        "arn:aws:codedeploy:${var.region}:${var.aws_account_id}:deploymentconfig:CodeDeployDefault.OneAtATime",
+        "arn:aws:codedeploy:${var.region}:${var.aws_account_id}:deploymentconfig:CodeDeployDefault.HalfAtATime",
+        "arn:aws:codedeploy:${var.region}:${var.aws_account_id}:deploymentconfig:CodeDeployDefault.AllAtOnce"
+      ]
+    }
+  ]
+}
+EOF
+}
+
+
+resource "aws_iam_policy" "circleci-ec2-ami" {
+  name        = "circleci-ec2-ami"
+  description = "CircleCI user policy to attach to ec2 ami"
+
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ec2:AttachVolume",
+        "ec2:AuthorizeSecurityGroupIngress",
+        "ec2:CopyImage",
+        "ec2:CreateImage",
+        "ec2:CreateKeypair",
+        "ec2:CreateSecurityGroup",
+        "ec2:CreateSnapshot",
+        "ec2:CreateTags",
+        "ec2:CreateVolume",
+        "ec2:DeleteKeyPair",
+        "ec2:DeleteSecurityGroup",
+        "ec2:DeleteSnapshot",
+        "ec2:DeleteVolume",
+        "ec2:DeregisterImage",
+        "ec2:DescribeImageAttribute",
+        "ec2:DescribeImages",
+        "ec2:DescribeInstances",
+        "ec2:DescribeInstanceStatus",
+        "ec2:DescribeRegions",
+        "ec2:DescribeSecurityGroups",
+        "ec2:DescribeSnapshots",
+        "ec2:DescribeSubnets",
+        "ec2:DescribeTags",
+        "ec2:DescribeVolumes",
+        "ec2:DetachVolume",
+        "ec2:GetPasswordData",
+        "ec2:ModifyImageAttribute",
+        "ec2:ModifyInstanceAttribute",
+        "ec2:ModifySnapshotAttribute",
+        "ec2:RegisterImage",
+        "ec2:RunInstances",
+        "ec2:StopInstances",
+        "ec2:TerminateInstances"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+EOF
+}
+
+
+#Upload to S3
+resource "aws_iam_user_policy_attachment" "circleci_upload_s3_attach" {
+  user       = "${var.circleci_user_name}"
+  policy_arn = "${aws_iam_policy.CircleCI-Upload-To-S3.arn}"
+}
+
+#Circleci to code deploy
+resource "aws_iam_user_policy_attachment" "circleci_code_deploy_attach" {
+  user       = "${var.circleci_user_name}"
+  policy_arn = "${aws_iam_policy.CircleCI-Code-Deploy.arn}"
+}
+
+#Circleci to 
+resource "aws_iam_user_policy_attachment" "circleci_ec2_ami_attach" {
+  user       = "${var.circleci_user_name}"
+  policy_arn = "${aws_iam_policy.circleci-ec2-ami.arn}"
+}
+
+
+#--------------------------------------- Code Deploy Roles and Policies ---------------------------------
+#Creating role for CodeDeploy-To-S3
+resource "aws_iam_role" "CodeDeployServiceRole" {
+  name = "CodeDeployServiceRole"
+
+  assume_role_policy = "${file("codeDeployService.json")}"
+
+  tags = {
+    Name = "Code-Deploy-Iam role"
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "code_deploy_attach" {
+  role       = "${aws_iam_role.CodeDeployServiceRole.name}"
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSCodeDeployRole"
+}
+
+#---------------------------------- Code Deploy Application -------------------------------------------
+#Code Deployment App
+resource "aws_codedeploy_app" "code_deploy_app" {
+  compute_platform = "Server"
+  name             = "${var.code_deploy_application_name}"
+}
+
+#Code Deployment Group
+resource "aws_codedeploy_deployment_group" "code_deploy_webapp_group" {
+  app_name               = "${aws_codedeploy_app.code_deploy_app.name}"
+  deployment_config_name = "${var.code_deploy_config_name}"
+  deployment_group_name  = "${var.code_deploy_group_name}"
+  service_role_arn       = "${aws_iam_role.CodeDeployServiceRole.arn}"
+
+  auto_rollback_configuration {
+    enabled = true
+    events  = ["DEPLOYMENT_FAILURE"]
+  }
+
+  deployment_style {
+    deployment_option = "WITHOUT_TRAFFIC_CONTROL"
+    deployment_type   = "IN_PLACE"
+  }
+
+  ec2_tag_set {
+      ec2_tag_filter {
+        key   = "Name"
+        type  = "KEY_AND_VALUE"
+        value = "${var.ec2_tag_value}"
+      }
+    }
+}
+
