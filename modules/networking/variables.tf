@@ -191,3 +191,41 @@ variable "ami_owner" {
     description = "User that created the ami"
     default = 112710657666
 }
+
+variable "code_deploy_s3_bucket_name" {
+    description = "Bucket name for code deploy"
+    default = "codedeploy.neucloudwebapp.me"
+}
+
+
+variable "circleci_user_name" {
+    description = "Circleci user name"
+    default = "circleci"
+}
+
+variable "aws_account_id" {
+    description = "AWS account id for attaching policy"
+    default = 918568617781
+}
+
+variable "code_deploy_application_name" {
+    description = "Code Deploy application name"
+    default = "csye6225-webapp"
+}
+
+variable "code_deploy_group_name" {
+    description = "Code Deployment group name"
+    default = "csye6225-webapp-deployment"
+}
+
+variable "ec2_tag_value" {
+    description = "EC2 tag value"
+    default = "csye6225_ec2"
+}
+
+variable "code_deploy_config_name" {
+    description = "Code Deploye Config name"
+    default = "CodeDeployDefault.AllAtOnce"
+}
+
+
