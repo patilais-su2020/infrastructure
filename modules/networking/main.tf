@@ -381,6 +381,11 @@ resource "aws_iam_role" "CodeDeployEC2ServiceRole" {
 }
 
 
+resource "aws_iam_role_policy_attachment" "code_deploy_ec2_attach" {
+  role       = "${aws_iam_role.CodeDeployEC2ServiceRole.name}"
+  policy_arn = "${aws_iam_policy.CodeDeploy-EC2-S3.arn}"
+}
+
 #Attaching cloud watch policy to ec2 instance
 resource "aws_iam_role_policy_attachment" "CloudWatchAgentServerRole" {
   role       = "${aws_iam_role.CodeDeployEC2ServiceRole.name}"
