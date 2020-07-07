@@ -271,14 +271,14 @@ resource "aws_instance" "csye_6225_ec2" {
   iam_instance_profile    = "${aws_iam_instance_profile.ec2_profile.name}"
   user_data = <<-EOF
           #!/bin/bash
-          echo "export db_hostname=${aws_db_instance.rds_instance.address}">>/home/ubuntu/.bashrc
-          echo "export db_username=${var.db_master_username}">>/home/ubuntu/.bashrc
-          echo "export db_password=${var.db_master_password}">>/home/ubuntu/.bashrc
-          echo "export s3_bucket_name=${var.s3_bucket_name}">>/home/ubuntu/.bashrc
-          echo "export AWS_ACCESS_KEY_ID=${var.prod_access_key}">>/home/ubuntu/.bashrc
-          echo "export AWS_SECRET_ACCESS_KEY=${var.prod_secret_key}">>/home/ubuntu/.bashrc
-          echo "export db_name=${var.rds_instance_name}">>/home/ubuntu/.bashrc
-          echo "export AWS_REGION=${var.region}">>/home/ubuntu/.bashrc
+          echo export "AWS_ACCESS_KEY_ID=${var.prod_access_key}" | sudo tee -a /etc/environment
+          echo export "AWS_SECRET_ACCESS_KEY=${var.prod_secret_key}" | sudo tee -a /etc/environment
+          echo export "AWS_REGION=${var.region}" | sudo tee -a /etc/environment
+          echo export "db_name=${var.rds_instance_name}" | sudo tee -a /etc/environment
+          echo export "db_hostname=${aws_db_instance.rds_instance.address}" | sudo tee -a /etc/environment
+          echo export "db_username=${var.db_master_username}" | sudo tee -a /etc/environment
+          echo export "db_password=${var.db_master_password}" | sudo tee -a /etc/environment
+          echo export "s3_bucket_name=${var.s3_bucket_name}" | sudo tee -a /etc/environment
       EOF  
   root_block_device {
     volume_type           =  var.root_block_device_volume_type
@@ -344,39 +344,6 @@ EOF
 #--------------------------------------------------------------------------
 #------------------------------ Code Deploy -------------------------------
 
-#Creating S3 bucket for Code Deploy
-# resource "aws_s3_bucket" "codedeploy_s3_bucket" {
-#   bucket = "${var.code_deploy_s3_bucket_name}"
-#   acl    = "private"
-#   force_destroy = true
-
-#   versioning {
-#     mfa_delete = true
-#   }
-
-#   #Default server side encryption
-#   server_side_encryption_configuration {
-#     rule {
-#       apply_server_side_encryption_by_default {
-#         sse_algorithm     = "AES256"
-#       }
-#     }
-#   }
-
-#   lifecycle_rule {
-#     enabled = true
-#     expiration {
-#       days = 30
-#       expired_object_delete_marker = true
-#     }
-#   }
-
-#   tags = {
-#     Name        = "Code Deploy bucket"
-#     Environment = "Prod"
-#   }
-# }
-
 #Creating IAM policy for S3 bucket 
 resource "aws_iam_policy" "CodeDeploy-EC2-S3" {
   name        = "CodeDeploy-EC2-S3"
@@ -413,9 +380,16 @@ resource "aws_iam_role" "CodeDeployEC2ServiceRole" {
   }
 }
 
+
 resource "aws_iam_role_policy_attachment" "code_deploy_ec2_attach" {
   role       = "${aws_iam_role.CodeDeployEC2ServiceRole.name}"
   policy_arn = "${aws_iam_policy.CodeDeploy-EC2-S3.arn}"
+}
+
+#Attaching cloud watch policy to ec2 instance
+resource "aws_iam_role_policy_attachment" "CloudWatchAgentServerRole" {
+  role       = "${aws_iam_role.CodeDeployEC2ServiceRole.name}"
+  policy_arn = "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
 }
 
 resource "aws_iam_role_policy_attachment" "ec2_s3_webapp_attach" {
