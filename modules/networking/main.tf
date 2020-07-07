@@ -344,7 +344,6 @@ EOF
 #--------------------------------------------------------------------------
 #------------------------------ Code Deploy -------------------------------
 
-
 #Creating IAM policy for S3 bucket 
 resource "aws_iam_policy" "CodeDeploy-EC2-S3" {
   name        = "CodeDeploy-EC2-S3"
