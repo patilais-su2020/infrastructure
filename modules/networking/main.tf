@@ -400,6 +400,13 @@ resource "aws_iam_role_policy_attachment" "CloudWatchAgentServerRole" {
   policy_arn = "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
 }
 
+#Attaching cloud watch policy to ec2 instance
+resource "aws_iam_role_policy_attachment" "CloudWatchAgentAdminServerRole" {
+  role       = "${aws_iam_role.CodeDeployEC2ServiceRole.name}"
+  policy_arn = "arn:aws:iam::aws:policy/CloudWatchAgentAdminPolicy"
+}
+
+
 resource "aws_iam_role_policy_attachment" "ec2_s3_webapp_attach" {
   role       = "${aws_iam_role.CodeDeployEC2ServiceRole.name}"
   policy_arn = "${aws_iam_policy.WebAppS3.arn}"
