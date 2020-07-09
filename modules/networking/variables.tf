@@ -83,6 +83,11 @@ variable "cidr_block_sec_grp_webapp" {
     default = "0.0.0.0/0"
 }
 
+variable "cidr_block_sec_grp_statsd"{
+    description = "The CIDR block for statsd group"
+    default = "0.0.0.0/0"
+}
+
 variable "cidr_block_sec_grp_outbound" {
     description = "The CIDR block for the 3rd subnet"
     default = "0.0.0.0/0"
@@ -132,6 +137,11 @@ variable "backend_port" {
 variable "frontend_port" {
     description = "Frontend port"
     default = 3000
+}
+
+variable "statsd_port" {
+    description = "StatsD port"
+    default = 8125
 }
 
 variable "db_port" {
