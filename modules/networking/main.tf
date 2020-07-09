@@ -168,7 +168,7 @@ resource "aws_security_group" "application_sec_grp" {
     description = "StatsD Port for cloudwatch"
     from_port   = "${var.statsd_port}"
     to_port     = "${var.statsd_port}"
-    protocol    = "udp"
+    protocol    = "tcp"
     cidr_blocks = ["${var.cidr_block_sec_grp_statsd}"]
   }
 
