@@ -168,7 +168,7 @@ resource "aws_security_group" "application_sec_grp" {
     description = "StatsD Port for cloudwatch"
     from_port   = "${var.statsd_port}"
     to_port     = "${var.statsd_port}"
-    protocol    = "tcp"
+    protocol    = "udp"
     cidr_blocks = ["${var.cidr_block_sec_grp_statsd}"]
   }
 
@@ -399,6 +399,13 @@ resource "aws_iam_role_policy_attachment" "CloudWatchAgentServerRole" {
   role       = "${aws_iam_role.CodeDeployEC2ServiceRole.name}"
   policy_arn = "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
 }
+
+#Attaching cloud watch policy to ec2 instance
+resource "aws_iam_role_policy_attachment" "CloudWatchAgentAdminServerRole" {
+  role       = "${aws_iam_role.CodeDeployEC2ServiceRole.name}"
+  policy_arn = "arn:aws:iam::aws:policy/CloudWatchAgentAdminPolicy"
+}
+
 
 resource "aws_iam_role_policy_attachment" "ec2_s3_webapp_attach" {
   role       = "${aws_iam_role.CodeDeployEC2ServiceRole.name}"
