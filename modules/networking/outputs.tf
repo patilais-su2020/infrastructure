@@ -20,5 +20,5 @@ output "this_subnet_third_id" {
 
 output "user_data" {
   description = "User data passed to EC2 instance"
-  value = "${aws_instance.csye_6225_ec2.user_data}"
+  value = "${aws_launch_configuration.asg_launch_config.user_data}"
 }

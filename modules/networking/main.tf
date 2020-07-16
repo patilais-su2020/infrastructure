@@ -121,7 +121,8 @@ resource "aws_security_group" "application_sec_grp" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["${var.cidr_block_sec_grp_ssh}"]
+    security_groups = ["${aws_security_group.load_balancer_sec_grp.id}"]
+    # cidr_blocks = ["${var.cidr_block_sec_grp_ssh}"]
   }
 
   ingress {
@@ -129,7 +130,9 @@ resource "aws_security_group" "application_sec_grp" {
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
-    cidr_blocks = ["${var.cidr_block_sec_grp_https}"]
+    security_groups = ["${aws_security_group.load_balancer_sec_grp.id}"]
+
+    # cidr_blocks = ["${var.cidr_block_sec_grp_https}"]
   }
 
   ingress {
@@ -137,7 +140,9 @@ resource "aws_security_group" "application_sec_grp" {
     from_port   = 80
     to_port     = 80
     protocol    = 6
-    cidr_blocks = ["${var.cidr_block_sec_grp_http}"]
+    security_groups = ["${aws_security_group.load_balancer_sec_grp.id}"]
+
+    # cidr_blocks = ["${var.cidr_block_sec_grp_http}"]
   }
 
   ingress {
@@ -145,7 +150,9 @@ resource "aws_security_group" "application_sec_grp" {
     from_port   = "${var.frontend_port}"
     to_port     = "${var.frontend_port}"
     protocol    = "tcp"
-    cidr_blocks = ["${var.cidr_block_sec_grp_frontend}"]
+    security_groups = ["${aws_security_group.load_balancer_sec_grp.id}"]
+
+    # cidr_blocks = ["${var.cidr_block_sec_grp_frontend}"]
   }
 
   ingress {
@@ -153,7 +160,9 @@ resource "aws_security_group" "application_sec_grp" {
     from_port   = "${var.backend_port}"
     to_port     = "${var.backend_port}"
     protocol    = "tcp"
-    cidr_blocks = ["${var.cidr_block_sec_grp_backend}"]
+    security_groups = ["${aws_security_group.load_balancer_sec_grp.id}"]
+
+    # cidr_blocks = ["${var.cidr_block_sec_grp_backend}"]
   }
 
   ingress {
@@ -161,7 +170,9 @@ resource "aws_security_group" "application_sec_grp" {
     from_port   = "${var.proxy_port}"
     to_port     = "${var.proxy_port}"
     protocol    = "tcp"
-    cidr_blocks = ["${var.cidr_block_sec_grp_webapp}"]
+    security_groups = ["${aws_security_group.load_balancer_sec_grp.id}"]
+
+    # cidr_blocks = ["${var.cidr_block_sec_grp_webapp}"]
   }
 
   ingress {
@@ -169,7 +180,9 @@ resource "aws_security_group" "application_sec_grp" {
     from_port   = "${var.statsd_port}"
     to_port     = "${var.statsd_port}"
     protocol    = "tcp"
-    cidr_blocks = ["${var.cidr_block_sec_grp_statsd}"]
+    security_groups = ["${aws_security_group.load_balancer_sec_grp.id}"]
+
+    # cidr_blocks = ["${var.cidr_block_sec_grp_statsd}"]
   }
 
   egress {
@@ -269,39 +282,39 @@ data "aws_ami" "ubuntu" {
 }
 
 #Creating EC2 instance
-resource "aws_instance" "csye_6225_ec2" {
-  ami                     = "${data.aws_ami.ubuntu.id}"
-  instance_type           = "t2.micro"
-  vpc_security_group_ids  = ["${aws_security_group.application_sec_grp.id}"] 
-  subnet_id               = "${aws_subnet.primary-subnet.id}"
-  disable_api_termination = false
-  key_name                = var.ssh_key_name
-  iam_instance_profile    = "${aws_iam_instance_profile.ec2_profile.name}"
-  user_data = <<-EOF
-          #!/bin/bash
-          echo export "AWS_ACCESS_KEY_ID=${var.prod_access_key}" | sudo tee -a /etc/environment
-          echo export "AWS_SECRET_ACCESS_KEY=${var.prod_secret_key}" | sudo tee -a /etc/environment
-          echo export "AWS_REGION=${var.region}" | sudo tee -a /etc/environment
-          echo export "db_name=${var.rds_instance_name}" | sudo tee -a /etc/environment
-          echo export "db_hostname=${aws_db_instance.rds_instance.address}" | sudo tee -a /etc/environment
-          echo export "db_username=${var.db_master_username}" | sudo tee -a /etc/environment
-          echo export "db_password=${var.db_master_password}" | sudo tee -a /etc/environment
-          echo export "s3_bucket_name=${var.s3_bucket_name}" | sudo tee -a /etc/environment
-      EOF  
-  root_block_device {
-    volume_type           =  var.root_block_device_volume_type
-    volume_size           =  var.root_block_device_volume_size
-    delete_on_termination = true
-  }
+# resource "aws_instance" "csye_6225_ec2" {
+#   ami                     = "${data.aws_ami.ubuntu.id}"
+#   instance_type           = "t2.micro"
+#   vpc_security_group_ids  = ["${aws_security_group.application_sec_grp.id}"] 
+#   subnet_id               = "${aws_subnet.primary-subnet.id}"
+#   disable_api_termination = false
+#   key_name                = var.ssh_key_name
+#   iam_instance_profile    = "${aws_iam_instance_profile.ec2_profile.name}"
+#   user_data = <<-EOF
+#           #!/bin/bash
+#           echo export "AWS_ACCESS_KEY_ID=${var.prod_access_key}" | sudo tee -a /etc/environment
+#           echo export "AWS_SECRET_ACCESS_KEY=${var.prod_secret_key}" | sudo tee -a /etc/environment
+#           echo export "AWS_REGION=${var.region}" | sudo tee -a /etc/environment
+#           echo export "db_name=${var.rds_instance_name}" | sudo tee -a /etc/environment
+#           echo export "db_hostname=${aws_db_instance.rds_instance.address}" | sudo tee -a /etc/environment
+#           echo export "db_username=${var.db_master_username}" | sudo tee -a /etc/environment
+#           echo export "db_password=${var.db_master_password}" | sudo tee -a /etc/environment
+#           echo export "s3_bucket_name=${var.s3_bucket_name}" | sudo tee -a /etc/environment
+#       EOF  
+#   root_block_device {
+#     volume_type           =  var.root_block_device_volume_type
+#     volume_size           =  var.root_block_device_volume_size
+#     delete_on_termination = true
+#   }
 
-  depends_on = [
-    aws_db_instance.rds_instance
-  ] 
+#   depends_on = [
+#     aws_db_instance.rds_instance
+#   ] 
   
-  tags = {
-    Name = "csye6225_ec2"
-  }
-}
+#   tags = {
+#     Name = "csye6225_ec2"
+#   }
+# }
 
 #Creating DynamoDb 
 resource "aws_dynamodb_table" "csye-dynamodb-table" {
@@ -593,6 +606,7 @@ resource "aws_codedeploy_deployment_group" "code_deploy_webapp_group" {
   deployment_config_name = "${var.code_deploy_config_name}"
   deployment_group_name  = "${var.code_deploy_group_name}"
   service_role_arn       = "${aws_iam_role.CodeDeployServiceRole.arn}"
+  autoscaling_groups     = ["${aws_autoscaling_group.ag_ec2_instance.name}"]
 
   auto_rollback_configuration {
     enabled = true
@@ -611,5 +625,231 @@ resource "aws_codedeploy_deployment_group" "code_deploy_webapp_group" {
         value = "${var.ec2_tag_value}"
       }
     }
+}
+
+#---------------------------------- Launch Configuration ---------------------------------------
+resource "aws_launch_configuration" "asg_launch_config" {
+  name   = "asg_launch_config"
+  image_id      = "${data.aws_ami.ubuntu.id}" 
+  instance_type = "t2.micro"
+  key_name = var.ssh_key_name
+  associate_public_ip_address = true
+  iam_instance_profile = "${aws_iam_instance_profile.ec2_profile.name}"
+  security_groups  = ["${aws_security_group.application_sec_grp.id}"] 
+  
+  root_block_device {
+    volume_type           =  var.root_block_device_volume_type
+    volume_size           =  var.root_block_device_volume_size
+    delete_on_termination = true
+  }
+
+  depends_on = [
+    aws_db_instance.rds_instance
+  ] 
+  user_data = <<-EOF
+          #!/bin/bash
+          echo export "AWS_ACCESS_KEY_ID=${var.prod_access_key}" | sudo tee -a /etc/environment
+          echo export "AWS_SECRET_ACCESS_KEY=${var.prod_secret_key}" | sudo tee -a /etc/environment
+          echo export "AWS_REGION=${var.region}" | sudo tee -a /etc/environment
+          echo export "db_name=${var.rds_instance_name}" | sudo tee -a /etc/environment
+          echo export "db_hostname=${aws_db_instance.rds_instance.address}" | sudo tee -a /etc/environment
+          echo export "db_username=${var.db_master_username}" | sudo tee -a /etc/environment
+          echo export "db_password=${var.db_master_password}" | sudo tee -a /etc/environment
+          echo export "s3_bucket_name=${var.s3_bucket_name}" | sudo tee -a /etc/environment
+      EOF
+}
+
+#--------------------------------------- Security Group for Load Balancer --------------------------------
+
+#Attaching Security Group to EC2 instance
+resource "aws_security_group" "load_balancer_sec_grp" {
+  name        = "load_balancer_sec_grp"
+  description = "Setting inbound and outbound traffic for load balancer"
+  vpc_id      = "${aws_vpc.selected.id}"
+
+ ingress {
+    description = "SSH from VPC"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["${var.cidr_block_sec_grp_ssh}"]
+  }
+
+  ingress {
+    description = "Https from VPC"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["${var.cidr_block_sec_grp_https}"]
+  }
+
+  ingress {
+    description = "Http for VPC"
+    from_port   = 80
+    to_port     = 80
+    protocol    = 6
+    cidr_blocks = ["${var.cidr_block_sec_grp_http}"]
+  } 
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["${var.cidr_block_sec_grp_outbound}"]
+  }
+
+  tags = {
+    Name = "load_balancer_sec_grp"
+  }
+}
+
+
+#--------------------------------------------- Load Balancer ----------------------------------------------
+
+#Load Balancer for Webapp
+resource "aws_lb" "webapp-load-balancer" {
+  name               = "webapp-load-balancer"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = ["${aws_security_group.load_balancer_sec_grp.id}"]
+  subnets            = ["${aws_subnet.primary-subnet.id}", "${aws_subnet.secondary-subnet.id}", "${aws_subnet.third-subnet.id}"]
+  tags = {
+    Name = "webapp-load-balancer"
+  }
+}
+
+#Load Balancer Target Group for load balancer
+resource "aws_lb_target_group" "target_group_lb_webapp" {
+  name     = "target-group-lb-webapp"
+  vpc_id   = "${aws_vpc.selected.id}"
+  port     = 3000
+  protocol = "HTTP"
+}
+
+# # HTTPS certificates
+# data "aws_acm_certificate" "https_certificate" {
+#   domain      = "${var.domain_name}"
+#   types       = ["AMAZON_ISSUED"]
+#   most_recent = true
+# }
+
+#Load Balancer Listener
+# resource "aws_lb_listener" "lb_listener_1" {
+#   load_balancer_arn = "${aws_lb.webapp-load-balancer.arn}"
+#   port              = "443"
+#   protocol          = "HTTPS"
+#   # certificate_arn   = "${data.aws_acm_certificate.https_certificate.arn}"
+
+#   default_action {
+#     type             = "forward"
+#     target_group_arn = "${aws_lb_target_group.target_group_lb_webapp.arn}"
+#   }
+# }
+
+#Load Balancer Listener
+resource "aws_lb_listener" "lb_listener_2" {
+  load_balancer_arn = "${aws_lb.webapp-load-balancer.arn}"
+  port              = "80"
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = "${aws_lb_target_group.target_group_lb_webapp.arn}"
+  }
+}
+
+data "aws_route53_zone" "mydomain_r53" {
+  zone_id = var.r53_zone_id
+  vpc_id = "${aws_vpc.selected.id}"
+}
+
+resource "aws_route53_record" "dns_record" {
+  zone_id = "${data.aws_route53_zone.mydomain_r53.zone_id}"
+  name    = "${var.domain_name}"
+  type    = "A"
+  alias {
+    name                   = "${aws_lb.webapp-load-balancer.dns_name}"
+    zone_id                = "${aws_lb.webapp-load-balancer.zone_id}"
+    evaluate_target_health = false
+  }
+}
+
+#--------------------------------------- Auto-Scaling Group ---------------------------------
+resource "aws_autoscaling_group" "ag_ec2_instance" {
+  name                      = "ag_ec2_instance"
+  max_size                  = 5
+  min_size                  = 2
+  desired_capacity          = 2
+  force_delete              = true
+  launch_configuration      = "${aws_launch_configuration.asg_launch_config.name}"
+  vpc_zone_identifier       = ["${aws_subnet.primary-subnet.id}", "${aws_subnet.secondary-subnet.id}", "${aws_subnet.third-subnet.id}"]
+  target_group_arns         = ["${aws_lb_target_group.target_group_lb_webapp.arn}"]
+  # load_balancers            = ["${aws_lb.webapp-load-balancer.id}"]
+
+  default_cooldown          = 60
+
+  tag {
+    key                 = "Name"
+    value               = "csye6225_ec2"
+    propagate_at_launch = true
+  }
+}
+
+#------------------------- Auto Scaling Policies and Cloud Watch Alarm ----------------------------------
+
+# Auto-Scaling Policy for Scale Up
+resource "aws_autoscaling_policy" "ag-scaleup-cpu-policy" {
+    name = "ag-scaleup-cpu-policy"
+    autoscaling_group_name = "${aws_autoscaling_group.ag_ec2_instance.name}"
+    adjustment_type = "ChangeInCapacity"
+    scaling_adjustment = "1"
+    cooldown = "60"
+    policy_type = "SimpleScaling"
+}
+
+#Cloud Watch alarm for Scale Up
+resource "aws_cloudwatch_metric_alarm" "cloudWatch-scaleup-cpu-alarm" {
+    alarm_name = "cloudWatch-scaleup-cpu-alarm"
+    alarm_description = "Scale up when CPU usage > 5%"
+    comparison_operator = "GreaterThanOrEqualToThreshold"
+    evaluation_periods = "2"
+    metric_name = "CPUUtilization"
+    namespace = "AWS/EC2"
+    period = "120"
+    statistic = "Average"
+    threshold = "5"
+    dimensions = {
+      "AutoScalingGroupName" = "${aws_autoscaling_group.ag_ec2_instance.name}"
+    }
+    actions_enabled = true
+    alarm_actions = ["${aws_autoscaling_policy.ag-scaleup-cpu-policy.arn}"]
+}
+
+# Auto-Scaling Policy for Scale Down
+resource "aws_autoscaling_policy" "ag-scaledown-cpu-policy" {
+    name = "ag-scaledown-cpu-policy"
+    autoscaling_group_name = "${aws_autoscaling_group.ag_ec2_instance.name}"
+    adjustment_type = "ChangeInCapacity"
+    scaling_adjustment = "-1"
+    cooldown = "60"
+    policy_type = "SimpleScaling"
+}
+
+#Cloud Watch alarm for Scale Down
+resource "aws_cloudwatch_metric_alarm" "cloudWatch-scaledown-cpu-alarm" {
+    alarm_name = "cloudWatch-scaledown-cpu-alarm"
+    alarm_description = "Scale up when CPU usage < 3%"
+    comparison_operator = "LessThanOrEqualToThreshold"
+    evaluation_periods = "2"
+    metric_name = "CPUUtilization"
+    namespace = "AWS/EC2"
+    period = "120"
+    statistic = "Average"
+    threshold = "3"
+    dimensions = {
+      "AutoScalingGroupName" = "${aws_autoscaling_group.ag_ec2_instance.name}"
+    }
+    actions_enabled = true
+    alarm_actions = ["${aws_autoscaling_policy.ag-scaledown-cpu-policy.arn}"]
 }
 

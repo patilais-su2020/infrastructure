@@ -238,4 +238,12 @@ variable "code_deploy_config_name" {
     default = "CodeDeployDefault.AllAtOnce"
 }
 
+variable "domain_name" {
+    description = "Domain name for prod"
+    default = "prod.neucloudwebapp.me."
+}
 
+variable "r53_zone_id" {
+    description = "Zone Id for Prod Route 53"
+    default = "Z09843643E1PAHJ5TFG98"
+}
