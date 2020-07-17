@@ -687,6 +687,15 @@ resource "aws_lb_target_group" "target_group_lb_webapp" {
   vpc_id   = "${aws_vpc.selected.id}"
   port     = 3000
   protocol = "HTTP"
+
+  health_check {
+    interval = 30
+    timeout = 5
+    healthy_threshold = 2
+    unhealthy_threshold = 2
+    path = "/"
+    port = 80
+  }
 }
 
 #Load Balancer Listener
@@ -715,7 +724,7 @@ resource "aws_route53_record" "dns_record" {
   alias {
     name                   = "${aws_lb.webapp-load-balancer.dns_name}"
     zone_id                = "${aws_lb.webapp-load-balancer.zone_id}"
-    evaluate_target_health = false
+    evaluate_target_health = true
   }
 }
 
@@ -759,7 +768,7 @@ resource "aws_cloudwatch_metric_alarm" "cloudWatch-scaleup-cpu-alarm" {
     evaluation_periods = "2"
     metric_name = "CPUUtilization"
     namespace = "AWS/EC2"
-    period = "120"
+    period = "60"
     statistic = "Average"
     threshold = "5"
     dimensions = {
@@ -787,7 +796,7 @@ resource "aws_cloudwatch_metric_alarm" "cloudWatch-scaledown-cpu-alarm" {
     evaluation_periods = "2"
     metric_name = "CPUUtilization"
     namespace = "AWS/EC2"
-    period = "120"
+    period = "60"
     statistic = "Average"
     threshold = "3"
     dimensions = {
