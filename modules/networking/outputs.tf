@@ -22,3 +22,13 @@ output "user_data" {
   description = "User data passed to EC2 instance"
   value = "${aws_launch_configuration.asg_launch_config.user_data}"
 }
+
+output "dns_name" {
+  description = "DNS name for load balancer"
+  value = "${aws_lb.webapp-load-balancer.dns_name}"
+}
+
+output "zone_id" {
+  description = "Zone id for load balancer"
+  value = "${aws_lb.webapp-load-balancer.zone_id}"
+}

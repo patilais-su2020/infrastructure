@@ -122,7 +122,6 @@ resource "aws_security_group" "application_sec_grp" {
     to_port     = 22
     protocol    = "tcp"
     security_groups = ["${aws_security_group.load_balancer_sec_grp.id}"]
-    # cidr_blocks = ["${var.cidr_block_sec_grp_ssh}"]
   }
 
   ingress {
@@ -131,8 +130,6 @@ resource "aws_security_group" "application_sec_grp" {
     to_port     = 443
     protocol    = "tcp"
     security_groups = ["${aws_security_group.load_balancer_sec_grp.id}"]
-
-    # cidr_blocks = ["${var.cidr_block_sec_grp_https}"]
   }
 
   ingress {
@@ -141,8 +138,6 @@ resource "aws_security_group" "application_sec_grp" {
     to_port     = 80
     protocol    = 6
     security_groups = ["${aws_security_group.load_balancer_sec_grp.id}"]
-
-    # cidr_blocks = ["${var.cidr_block_sec_grp_http}"]
   }
 
   ingress {
@@ -151,8 +146,6 @@ resource "aws_security_group" "application_sec_grp" {
     to_port     = "${var.frontend_port}"
     protocol    = "tcp"
     security_groups = ["${aws_security_group.load_balancer_sec_grp.id}"]
-
-    # cidr_blocks = ["${var.cidr_block_sec_grp_frontend}"]
   }
 
   ingress {
@@ -161,18 +154,6 @@ resource "aws_security_group" "application_sec_grp" {
     to_port     = "${var.backend_port}"
     protocol    = "tcp"
     security_groups = ["${aws_security_group.load_balancer_sec_grp.id}"]
-
-    # cidr_blocks = ["${var.cidr_block_sec_grp_backend}"]
-  }
-
-  ingress {
-    description = "Proxy Port for webapp"
-    from_port   = "${var.proxy_port}"
-    to_port     = "${var.proxy_port}"
-    protocol    = "tcp"
-    security_groups = ["${aws_security_group.load_balancer_sec_grp.id}"]
-
-    # cidr_blocks = ["${var.cidr_block_sec_grp_webapp}"]
   }
 
   ingress {
@@ -181,8 +162,6 @@ resource "aws_security_group" "application_sec_grp" {
     to_port     = "${var.statsd_port}"
     protocol    = "tcp"
     security_groups = ["${aws_security_group.load_balancer_sec_grp.id}"]
-
-    # cidr_blocks = ["${var.cidr_block_sec_grp_statsd}"]
   }
 
   egress {
@@ -627,7 +606,7 @@ resource "aws_codedeploy_deployment_group" "code_deploy_webapp_group" {
     }
 }
 
-#---------------------------------- Launch Configuration ---------------------------------------
+#------------------------------------- Launch Configuration --------------------------------------
 resource "aws_launch_configuration" "asg_launch_config" {
   name   = "asg_launch_config"
   image_id      = "${data.aws_ami.ubuntu.id}" 
@@ -666,22 +645,6 @@ resource "aws_security_group" "load_balancer_sec_grp" {
   name        = "load_balancer_sec_grp"
   description = "Setting inbound and outbound traffic for load balancer"
   vpc_id      = "${aws_vpc.selected.id}"
-
- ingress {
-    description = "SSH from VPC"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["${var.cidr_block_sec_grp_ssh}"]
-  }
-
-  ingress {
-    description = "Https from VPC"
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["${var.cidr_block_sec_grp_https}"]
-  }
 
   ingress {
     description = "Http for VPC"
@@ -726,26 +689,6 @@ resource "aws_lb_target_group" "target_group_lb_webapp" {
   protocol = "HTTP"
 }
 
-# # HTTPS certificates
-# data "aws_acm_certificate" "https_certificate" {
-#   domain      = "${var.domain_name}"
-#   types       = ["AMAZON_ISSUED"]
-#   most_recent = true
-# }
-
-#Load Balancer Listener
-# resource "aws_lb_listener" "lb_listener_1" {
-#   load_balancer_arn = "${aws_lb.webapp-load-balancer.arn}"
-#   port              = "443"
-#   protocol          = "HTTPS"
-#   # certificate_arn   = "${data.aws_acm_certificate.https_certificate.arn}"
-
-#   default_action {
-#     type             = "forward"
-#     target_group_arn = "${aws_lb_target_group.target_group_lb_webapp.arn}"
-#   }
-# }
-
 #Load Balancer Listener
 resource "aws_lb_listener" "lb_listener_2" {
   load_balancer_arn = "${aws_lb.webapp-load-balancer.arn}"
@@ -758,6 +701,7 @@ resource "aws_lb_listener" "lb_listener_2" {
   }
 }
 
+#Route53 
 data "aws_route53_zone" "mydomain_r53" {
   zone_id = var.r53_zone_id
   vpc_id = "${aws_vpc.selected.id}"
@@ -767,6 +711,7 @@ resource "aws_route53_record" "dns_record" {
   zone_id = "${data.aws_route53_zone.mydomain_r53.zone_id}"
   name    = "${var.domain_name}"
   type    = "A"
+
   alias {
     name                   = "${aws_lb.webapp-load-balancer.dns_name}"
     zone_id                = "${aws_lb.webapp-load-balancer.zone_id}"
@@ -784,7 +729,6 @@ resource "aws_autoscaling_group" "ag_ec2_instance" {
   launch_configuration      = "${aws_launch_configuration.asg_launch_config.name}"
   vpc_zone_identifier       = ["${aws_subnet.primary-subnet.id}", "${aws_subnet.secondary-subnet.id}", "${aws_subnet.third-subnet.id}"]
   target_group_arns         = ["${aws_lb_target_group.target_group_lb_webapp.arn}"]
-  # load_balancers            = ["${aws_lb.webapp-load-balancer.id}"]
 
   default_cooldown          = 60
 
@@ -795,7 +739,7 @@ resource "aws_autoscaling_group" "ag_ec2_instance" {
   }
 }
 
-#------------------------- Auto Scaling Policies and Cloud Watch Alarm ----------------------------------
+#------------------------------ Auto Scaling Policies and Cloud Watch Alarm ----------------------------------
 
 # Auto-Scaling Policy for Scale Up
 resource "aws_autoscaling_policy" "ag-scaleup-cpu-policy" {

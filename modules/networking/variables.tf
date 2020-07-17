@@ -124,14 +124,9 @@ variable "ssh_key_name" {
     default = "csye_6225_ami_ssh"
 }
 
-variable "proxy_port" {
-    description = "Proxy port"
-    default = 5000
-}
-
 variable "backend_port" {
     description = "Backend port"
-    default = 4000
+    default = 5000
 }
 
 variable "frontend_port" {
