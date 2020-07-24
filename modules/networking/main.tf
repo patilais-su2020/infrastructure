@@ -300,11 +300,16 @@ resource "aws_dynamodb_table" "csye-dynamodb-table" {
   name           = "csye6225"
   read_capacity  = 20
   write_capacity = 20
-  hash_key       = "id"
+  hash_key       = "UUID"
 
   attribute {
-    name = "id"
+    name = "UUID"
     type = "S"
+  }
+
+  ttl {
+    attribute_name = "TimeToExist"
+    enabled        = true
   }
 
   tags = {
@@ -806,3 +811,170 @@ resource "aws_cloudwatch_metric_alarm" "cloudWatch-scaledown-cpu-alarm" {
     alarm_actions = ["${aws_autoscaling_policy.ag-scaledown-cpu-policy.arn}"]
 }
 
+#-------------------------------------------- SNS ---------------------------------------------
+resource "aws_sns_topic" "password_reset" {
+	name = "password_reset"
+}
+#------------------------------------------- Lambda -------------------------------------------
+resource "aws_iam_role" "role_for_sns_lambda" {
+  name = "role_for_sns_lambda"
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "Service": "lambda.amazonaws.com"
+      },
+      "Effect": "Allow",
+      "Sid": ""
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_policy"  "lambda_log_policy" {
+  name = "lambda_log_policy"
+  description = "Policy for Updating Lambda logs to CloudWatch"
+  policy = <<EOF
+{
+    "Version":"2012-10-17",
+    "Statement":[
+      {
+        "Action":[
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ],
+        "Effect":"Allow",
+        "Resource":"arn:aws:logs:::*"
+      }
+    ]
+  }
+  EOF
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_dynamo" {
+	role = "${aws_iam_role.role_for_sns_lambda.name}"
+	policy_arn = "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess"
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_route53" {
+	role = "${aws_iam_role.role_for_sns_lambda.name}"
+	policy_arn = "arn:aws:iam::aws:policy/AmazonRoute53FullAccess"
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_SNS" {
+	role = "${aws_iam_role.role_for_sns_lambda.name}"
+	policy_arn = "arn:aws:iam::aws:policy/AmazonSNSFullAccess"
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_SES" {
+	role = "${aws_iam_role.role_for_sns_lambda.name}"
+	policy_arn = "arn:aws:iam::aws:policy/AmazonSESFullAccess"
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_cloudwatchlogs" {
+	role = "${aws_iam_role.role_for_sns_lambda.name}"
+	policy_arn = "${aws_iam_policy.lambda_log_policy.arn}"
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_basicExecutionRole" {
+  role = "${aws_iam_role.role_for_sns_lambda.name}"
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_DynamoDBExecutionRole" {
+  role = "${aws_iam_role.role_for_sns_lambda.name}"
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaDynamoDBExecutionRole"
+}
+
+resource "aws_sns_topic_subscription" "password_reset_sns" {
+	topic_arn = "${aws_sns_topic.password_reset.arn}"
+	protocol = "lambda"
+	endpoint = "${aws_lambda_function.send_email.arn}"
+}
+
+resource "aws_lambda_permission" "lambda_invoke_permission" {
+  action        = "lambda:InvokeFunction"
+  function_name = "${aws_lambda_function.send_email.function_name}"
+  principal = "sns.amazonaws.com"
+  source_arn = "${aws_sns_topic.password_reset.arn}"
+}
+
+#-------------------------------------------- LAMBDA function ------------------------------------------
+resource "aws_lambda_function" "send_email" {
+  filename = "resetpassword.zip"
+  function_name = "${var.lambda_function_name}"
+  role = "${aws_iam_role.role_for_sns_lambda.arn}"
+  handler = "resetpassword.handler"
+  runtime = "nodejs12.x"
+  memory_size = 512
+  timeout = 25
+
+  environment {
+    variables = {
+      aws_region = "${var.region}"
+    }
+  }
+}
+
+#--------------------------------- EC2 instance role -------------------------------------------------------
+resource "aws_iam_role_policy_attachment" "ec2_SNS" {
+	role = "${aws_iam_role.CodeDeployEC2ServiceRole.name}"
+	policy_arn = "arn:aws:iam::aws:policy/AmazonSNSFullAccess"
+}
+
+
+#----------------------------- CircleCi user policy attachment ---------------------------------
+#Creating IAM policy for S3 bucket 
+resource "aws_iam_policy" "LambdaAccess" {
+  name        = "LambdaAccess"
+  description = "Lambda access policy"
+
+  policy = <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "lambda:CreateFunction",
+                "lambda:UpdateFunctionEventInvokeConfig",
+                "lambda:TagResource",
+                "lambda:UpdateEventSourceMapping",
+                "lambda:InvokeFunction",
+                "lambda:PublishLayerVersion",
+                "lambda:DeleteProvisionedConcurrencyConfig",
+                "lambda:UpdateFunctionConfiguration",
+                "lambda:InvokeAsync",
+                "lambda:CreateEventSourceMapping",
+                "lambda:UntagResource",
+                "lambda:PutFunctionConcurrency",
+                "lambda:UpdateAlias",
+                "lambda:UpdateFunctionCode",
+                "lambda:DeleteLayerVersion",
+                "lambda:PutProvisionedConcurrencyConfig",
+                "lambda:DeleteAlias",
+                "lambda:PutFunctionEventInvokeConfig",
+                "lambda:DeleteFunctionEventInvokeConfig",
+                "lambda:DeleteFunction",
+                "lambda:PublishVersion",
+                "lambda:DeleteFunctionConcurrency",
+                "lambda:DeleteEventSourceMapping",
+                "lambda:CreateAlias"
+            ],
+            "Resource": "arn:aws:lambda:${var.region}:918568617781:function:${var.lambda_function_name}"
+        }
+    ]
+}
+EOF
+}
+
+resource "aws_iam_user_policy_attachment" "lambda_update_access" {
+  user       = "${var.circleci_user_name}"
+  policy_arn = "${aws_iam_policy.LambdaAccess.arn}"
+}
