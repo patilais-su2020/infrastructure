@@ -930,7 +930,7 @@ resource "aws_iam_role_policy_attachment" "ec2_SNS" {
 
 
 #----------------------------- CircleCi user policy attachment ---------------------------------
-#Creating IAM policy for S3 bucket 
+#Creating IAM policy for Lambda Access
 resource "aws_iam_policy" "LambdaAccess" {
   name        = "LambdaAccess"
   description = "Lambda access policy"
