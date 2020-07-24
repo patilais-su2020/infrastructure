@@ -229,7 +229,7 @@ variable "ec2_tag_value" {
 }
 
 variable "code_deploy_config_name" {
-    description = "Code Deploye Config name"
+    description = "Code Deployed Config name"
     default = "CodeDeployDefault.AllAtOnce"
 }
 
@@ -241,4 +241,9 @@ variable "domain_name" {
 variable "r53_zone_id" {
     description = "Zone Id for Prod Route 53"
     default = "Z09843643E1PAHJ5TFG98"
+}
+
+variable "lambda_function_name" {
+    description = "Lambda Function Name"
+    default = "lambda_webapp"
 }
