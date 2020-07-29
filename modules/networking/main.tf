@@ -236,22 +236,6 @@ resource "aws_db_subnet_group" "rds_db_subnet_grp" {
   }
 }
 
-#Creating an AWS instance
-resource "aws_db_instance" "rds_instance" {
-  allocated_storage    = var.storage_rds
-  engine               = var.rds_engine
-  engine_version       = var.rds_engine_version
-  instance_class       = var.rds_instance_class
-  multi_az             = false
-  identifier           = var.db_identifier
-  name                 = var.rds_instance_name
-  username             = var.db_master_username
-  password             = var.db_master_password
-  publicly_accessible  = var.publicly_accessible
-  db_subnet_group_name = aws_db_subnet_group.rds_db_subnet_grp.name
-  vpc_security_group_ids = [aws_security_group.database_sec_grp.id]
-  skip_final_snapshot = true
-}
 
 data "aws_ami" "ubuntu" {
   most_recent = true
@@ -977,4 +961,37 @@ EOF
 resource "aws_iam_user_policy_attachment" "lambda_update_access" {
   user       = "${var.circleci_user_name}"
   policy_arn = "${aws_iam_policy.LambdaAccess.arn}"
+}
+
+
+#---------------------------------- KMS for RDS encryption --------------------------------------
+
+
+#Creating an AWS instance
+resource "aws_db_instance" "rds_instance" {
+  allocated_storage    = var.storage_rds
+  engine               = var.rds_engine
+  engine_version       = var.rds_engine_version
+  instance_class       = var.rds_instance_class
+  multi_az             = false
+  identifier           = var.db_identifier
+  name                 = var.rds_instance_name
+  username             = var.db_master_username
+  password             = var.db_master_password
+  publicly_accessible  = var.publicly_accessible
+  db_subnet_group_name = aws_db_subnet_group.rds_db_subnet_grp.name
+  vpc_security_group_ids = [aws_security_group.database_sec_grp.id]
+  skip_final_snapshot = true
+  kms_key_id = "${aws_kms_key.rds_encryption.arn}"
+  storage_encrypted = true
+}
+
+resource "aws_kms_key" "rds_encryption" {
+  description             = "KMS key for RDS"
+  key_usage               = var.key_usage
+  policy                  = "${file("kms_policy.json")}"
+  is_enabled              = true
+  tags = {
+    "Name" = "KMS for RDS"
+  }
 }

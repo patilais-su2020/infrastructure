@@ -247,3 +247,8 @@ variable "lambda_function_name" {
     description = "Lambda Function Name"
     default = "lambda_webapp"
 }
+
+variable "key_usage" {
+    description = "Key usage for KMS attribute"
+    default = "ENCRYPT_DECRYPT"
+}
