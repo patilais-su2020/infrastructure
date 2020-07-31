@@ -116,14 +116,6 @@ resource "aws_security_group" "application_sec_grp" {
   description = "Setting inbound and outbound traffic"
   vpc_id      = "${aws_vpc.selected.id}"
 
- ingress {
-    description = "SSH from VPC"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    security_groups = ["${aws_security_group.load_balancer_sec_grp.id}"]
-  }
-
   ingress {
     description = "Https from VPC"
     from_port   = 443
@@ -981,9 +973,10 @@ resource "aws_db_instance" "rds_instance" {
   publicly_accessible  = var.publicly_accessible
   db_subnet_group_name = aws_db_subnet_group.rds_db_subnet_grp.name
   vpc_security_group_ids = [aws_security_group.database_sec_grp.id]
-  skip_final_snapshot = true
-  kms_key_id = "${aws_kms_key.rds_encryption.arn}"
+  skip_final_snapshot  = true
+  kms_key_id           = "${aws_kms_key.rds_encryption.arn}"
   storage_encrypted = true
+  ca_cert_identifier   = var.db_certs
 }
 
 resource "aws_kms_key" "rds_encryption" {
