@@ -257,3 +257,8 @@ variable "db_certs" {
     description = "Using SSL layer for RDS"
     default = "rds-ca-2019"
 }
+
+variable "domain_certificates" {
+    description = "Domain Certificated ARN"
+    default = "arn:aws:iam::918568617781:server-certificate/certificate_object_name"
+}

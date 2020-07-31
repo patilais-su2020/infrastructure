@@ -629,9 +629,9 @@ resource "aws_security_group" "load_balancer_sec_grp" {
 
   ingress {
     description = "Http for VPC"
-    from_port   = 80
-    to_port     = 80
-    protocol    = 6
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
     cidr_blocks = ["${var.cidr_block_sec_grp_http}"]
   } 
 
@@ -675,15 +675,16 @@ resource "aws_lb_target_group" "target_group_lb_webapp" {
     healthy_threshold = 2
     unhealthy_threshold = 2
     path = "/"
-    port = 80
+    port = 443
   }
 }
 
 #Load Balancer Listener
 resource "aws_lb_listener" "lb_listener_2" {
   load_balancer_arn = "${aws_lb.webapp-load-balancer.arn}"
-  port              = "80"
-  protocol          = "HTTP"
+  port              = "443"
+  protocol          = "HTTPS"
+  certificate_arn   = "${var.domain_certificates}"
 
   default_action {
     type             = "forward"
