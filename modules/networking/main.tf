@@ -116,14 +116,6 @@ resource "aws_security_group" "application_sec_grp" {
   description = "Setting inbound and outbound traffic"
   vpc_id      = "${aws_vpc.selected.id}"
 
- ingress {
-    description = "SSH from VPC"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    security_groups = ["${aws_security_group.load_balancer_sec_grp.id}"]
-  }
-
   ingress {
     description = "Https from VPC"
     from_port   = 443
@@ -236,22 +228,6 @@ resource "aws_db_subnet_group" "rds_db_subnet_grp" {
   }
 }
 
-#Creating an AWS instance
-resource "aws_db_instance" "rds_instance" {
-  allocated_storage    = var.storage_rds
-  engine               = var.rds_engine
-  engine_version       = var.rds_engine_version
-  instance_class       = var.rds_instance_class
-  multi_az             = false
-  identifier           = var.db_identifier
-  name                 = var.rds_instance_name
-  username             = var.db_master_username
-  password             = var.db_master_password
-  publicly_accessible  = var.publicly_accessible
-  db_subnet_group_name = aws_db_subnet_group.rds_db_subnet_grp.name
-  vpc_security_group_ids = [aws_security_group.database_sec_grp.id]
-  skip_final_snapshot = true
-}
 
 data "aws_ami" "ubuntu" {
   most_recent = true
@@ -653,9 +629,9 @@ resource "aws_security_group" "load_balancer_sec_grp" {
 
   ingress {
     description = "Http for VPC"
-    from_port   = 80
-    to_port     = 80
-    protocol    = 6
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
     cidr_blocks = ["${var.cidr_block_sec_grp_http}"]
   } 
 
@@ -699,15 +675,16 @@ resource "aws_lb_target_group" "target_group_lb_webapp" {
     healthy_threshold = 2
     unhealthy_threshold = 2
     path = "/"
-    port = 80
+    port = 443
   }
 }
 
 #Load Balancer Listener
 resource "aws_lb_listener" "lb_listener_2" {
   load_balancer_arn = "${aws_lb.webapp-load-balancer.arn}"
-  port              = "80"
-  protocol          = "HTTP"
+  port              = "443"
+  protocol          = "HTTPS"
+  certificate_arn   = "${var.domain_certificates}"
 
   default_action {
     type             = "forward"
@@ -977,4 +954,38 @@ EOF
 resource "aws_iam_user_policy_attachment" "lambda_update_access" {
   user       = "${var.circleci_user_name}"
   policy_arn = "${aws_iam_policy.LambdaAccess.arn}"
+}
+
+
+#---------------------------------- KMS for RDS encryption --------------------------------------
+
+
+#Creating an AWS instance
+resource "aws_db_instance" "rds_instance" {
+  allocated_storage    = var.storage_rds
+  engine               = var.rds_engine
+  engine_version       = var.rds_engine_version
+  instance_class       = var.rds_instance_class
+  multi_az             = false
+  identifier           = var.db_identifier
+  name                 = var.rds_instance_name
+  username             = var.db_master_username
+  password             = var.db_master_password
+  publicly_accessible  = var.publicly_accessible
+  db_subnet_group_name = aws_db_subnet_group.rds_db_subnet_grp.name
+  vpc_security_group_ids = [aws_security_group.database_sec_grp.id]
+  skip_final_snapshot  = true
+  kms_key_id           = "${aws_kms_key.rds_encryption.arn}"
+  storage_encrypted = true
+  ca_cert_identifier   = var.db_certs
+}
+
+resource "aws_kms_key" "rds_encryption" {
+  description             = "KMS key for RDS"
+  key_usage               = var.key_usage
+  policy                  = "${file("kms_policy.json")}"
+  is_enabled              = true
+  tags = {
+    "Name" = "KMS for RDS"
+  }
 }

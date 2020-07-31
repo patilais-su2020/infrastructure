@@ -240,10 +240,25 @@ variable "domain_name" {
 
 variable "r53_zone_id" {
     description = "Zone Id for Prod Route 53"
-    default = "Z09843643E1PAHJ5TFG98"
+    default = "Z01551757A32ODQPVGX7"
 }
 
 variable "lambda_function_name" {
     description = "Lambda Function Name"
     default = "lambda_webapp"
+}
+
+variable "key_usage" {
+    description = "Key usage for KMS attribute"
+    default = "ENCRYPT_DECRYPT"
+}
+
+variable "db_certs" {
+    description = "Using SSL layer for RDS"
+    default = "rds-ca-2019"
+}
+
+variable "domain_certificates" {
+    description = "Domain Certificated ARN"
+    default = "arn:aws:iam::918568617781:server-certificate/certificate_object_name"
 }
