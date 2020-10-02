@@ -1,7 +1,7 @@
 
 # INFRASTRUCTURE AS CODE
 
-Setting up infrastructure for AWS EC2 instances
+Setting up infrastructure in AWS
 
 ## Installations
 
